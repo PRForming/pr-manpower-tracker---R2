@@ -1,61 +1,68 @@
-# PR Forming Manpower Tracker
 
-A responsive daily manpower entry website for eight projects. It includes PR Forming hourly manpower, selectable subcontractors, automatic totals, draft/submitted status, previous-day copying, and a dashboard.
-
-## Instant demo
-
-Run without Supabase and the app saves records in the current browser:
-
-```bash
-npm install
-npm run dev
-```
-
-Open `http://localhost:3000`.
-
-## Shared production setup
-
-### 1. Create the database
-
-1. Create a Supabase project.
-2. Open **SQL Editor** and run `supabase/schema.sql`.
-3. In **Authentication**, create the superintendent users or enable the preferred email sign-in method.
-4. Copy the Project URL and publishable/anon key.
-
-### 2. Configure the app
-
-Copy `.env.example` to `.env.local` and enter:
-
-```env
+# Browser-safe Supabase configuration
 NEXT_PUBLIC_SUPABASE_URL=your-project-url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-publishable-anon-key
-```
+NEXT_PUBLIC_ADMIN_EMAIL=sam@prforming.com
 
-### 3. Deploy on Vercel
+# Server-only variables: add in Vercel, never commit real values
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+RESEND_API_KEY=re_xxxxxxxxx
+DAILY_SUMMARY_TO=sam@prforming.com
+DAILY_SUMMARY_FROM=PR Forming <manpower@your-verified-domain.com>
+CRON_SECRET=use-a-long-random-secret
 
-1. Put this project in a GitHub repository.
-2. Import the repository into Vercel.
-3. Add the two environment variables in Vercel Project Settings.
-4. Deploy.
+node_modules
+.next
+.env.local
+.vercel
 
-The generated Vercel URL can then be shared with the eight project teams.
+/// <reference types="next" />
+/// <reference types="next/image-types/global" />
+/// <reference path="./.next/types/routes.d.ts" />
 
-## Important before company-wide use
+// NOTE: This file should not be edited
+// see https://nextjs.org/docs/app/api-reference/config/typescript for more information.
 
-The included SQL policies allow any authenticated user to view and edit all project reports. This is suitable for a small trusted superintendent group. For stricter access, add a `project_members` table and project-specific RLS policies.
+{
+  "name": "pr-manpower-tracker",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.0",
+    "next": "^15.2.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0",
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0"
+  }
+}
 
-## Customize projects
+# PR Forming Manpower Tracker
 
-Update both:
+Private, mobile-friendly daily manpower tracking for eight projects.
 
-- `lib/constants.ts`
-- the seed project names in `supabase/schema.sql`
+## Included
 
-## Subcontractor list
+- Sign-in through Supabase Authentication
+- PR Forming hourly employee quantities
+- Subcontractor dropdown plus **Other** company entry
+- Draft and submitted reports
+- Copy previous day
+- Private administrator dashboard for `sam@prforming.com`
+- Stock-style 30-day manpower trend chart
+- Scheduled 10:00 AM Vancouver email endpoint
 
-Muluk, Leavitt Machinery, Platinum, Power Shotcrete, Rappicone, NRG, and Able are preloaded in the form.
-
-## Confirmed project list
+## Projects
 
 1. Sky Living - Surry
 2. Sony Tower
@@ -66,4 +73,82 @@ Muluk, Leavitt Machinery, Platinum, Power Shotcrete, Rappicone, NRG, and Able ar
 7. 1045 Burnaby
 8. Poor Italian
 
-If you already ran the earlier database script, run `supabase/update-projects.sql` once in the Supabase SQL Editor. For a brand-new database, run only `supabase/schema.sql`.
+## Database setup
+
+For a new Supabase project, run these files in the SQL Editor in this order:
+
+1. `supabase/schema.sql`
+2. `supabase/update-projects.sql` only if you previously used the placeholder project list
+3. `supabase/privacy-update.sql`
+4. `supabase/email-update.sql`
+
+Create users in **Authentication → Users**. The exact account `sam@prforming.com` becomes the administrator. Other users can only see their own reports; Sam can see all reports and the private dashboard.
+
+## Vercel environment variables
+
+Add all of these in **Project Settings → Environment Variables**:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=...
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+NEXT_PUBLIC_ADMIN_EMAIL=sam@prforming.com
+SUPABASE_SERVICE_ROLE_KEY=...
+RESEND_API_KEY=...
+DAILY_SUMMARY_TO=sam@prforming.com
+DAILY_SUMMARY_FROM=PR Forming <manpower@your-verified-domain.com>
+CRON_SECRET=a-long-random-value
+```
+
+Never put the service-role key or Resend key in a `NEXT_PUBLIC_...` variable.
+
+## Email setup
+
+1. Create a Resend account and verify a sending domain.
+2. Add the Resend API key and verified From address to Vercel.
+3. Run `supabase/email-update.sql`.
+4. Deploy. `vercel.json` calls `/api/daily-summary` hourly; the endpoint sends only during the 10:00 AM hour in `America/Vancouver` and records delivery to prevent duplicates.
+
+Vercel plan limits can affect cron frequency. If hourly cron is unavailable on your plan, use any scheduler that can call the endpoint hourly with this header:
+
+```text
+Authorization: Bearer YOUR_CRON_SECRET
+```
+
+The endpoint can be tested manually with `/api/daily-summary?force=1`, using the same Authorization header.
+
+## Local development
+
+```bash
+npm install
+npm run dev
+```
+
+Open `http://localhost:3000`.
+
+{
+  "compilerOptions": {
+    "target": "ES2017",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": false,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "plugins": [{ "name": "next" }],
+    "paths": { "@/*": ["./*"] }
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
+}
+
+{
+  "crons": [
+    { "path": "/api/daily-summary", "schedule": "0 * * * *" }
+  ]
+}
